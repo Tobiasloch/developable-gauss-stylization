@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.6)
+project(gaussStylizationImGui)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_BUILD_TYPE release)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(MAIN "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+set(TEST_MAIN "${CMAKE_CURRENT_SOURCE_DIR}/../test/test_main.cpp")
+
+# Define a CMake variable for debug mode
+option(DEBUG_MODE "Compile in debug mode" OFF)
+
+# Set the build type based on the DEBUG_MODE variable
+if(DEBUG_MODE)
+  set(CMAKE_BUILD_TYPE Debug)
+else()
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+
+# libigl
+option(LIBIGL_WITH_OPENGL            "Use OpenGL"         ON)
+option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"           ON)
+option(LIBIGL_WITH_VIEWER            "Use OpenGL viewer"  ON)
+option(LIBIGL_WITH_OPENGL_GLFW_IMGUI "Use ImGui"          ON)
+
+find_package(LIBIGL REQUIRED)
+
+include_directories("../utils_gauss/" "../utils_cubic/" "../test/")
+
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+  message(STATUS "dir='${dir}'")
+endforeach()
+
+file(GLOB SRCFILES *.cpp ../utils_gauss/*.cpp ../utils_cubic/*.cpp)
+list(REMOVE_ITEM SRCFILES ${MAIN})
+file(GLOB HEADERS *.h ../utils_gauss/*.h ../utils_cubic/*.h)
+file(GLOB TESTFILES ../test/*.cpp)
+list(REMOVE_ITEM TESTFILES ${TEST_MAIN})
+file(GLOB TESTHEADERS ../test/*.h)
+
+# Add the executables
+add_executable(${PROJECT_NAME}_bin ${MAIN} ${SRCFILES} ${HEADERS})
+# add_executable(${PROJECT_NAME}_test ${TEST_MAIN} ${TESTFILES} ${TESTHEADERS} ${SRCFILES} ${HEADERS})
+
+# visual studio config
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME}_bin)
+
+# Link necessary libraries
+target_link_libraries(${PROJECT_NAME}_bin igl::core igl::opengl igl::opengl_glfw igl::opengl_glfw_imgui)
+# target_link_libraries(${PROJECT_NAME}_test igl::core igl::opengl igl::opengl_glfw igl::opengl_glfw_imgui)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Set compiler flags for debugging if in debug mode
+# target_compile_options(${PROJECT_NAME}_test PRIVATE -g)
+if(DEBUG_MODE)
+  target_compile_options(${PROJECT_NAME}_bin PRIVATE -g)
+endif()
