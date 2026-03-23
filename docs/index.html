@@ -1,0 +1,814 @@
+<!doctype html><html class="no-js"><head><meta charset="utf-8"><title>Piecewise Developable Surface Approximation</title><meta name="description" content=""><meta name="viewport" content="width=device-width">
+<!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+<link href="http://fonts.googleapis.com/css?family=Raleway:300,400,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" href="latex.css">
+        <script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+        <!--<link rel="stylesheet" href="styles/main.37ab405b.css">-->
+<body>
+<!--[if lt IE 7]>
+<p class="browsehappy">You are using an 
+    <strong>outdated</strong> browser. Please 
+    <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.
+</p>
+<![endif]-->
+<div class="container">
+
+    <nav class="navbar">
+        <div class="container">
+            <ul class="navbar-list">
+                <li class="navbar-item">
+                    <a class="navbar-link" href="#intro">Introduction</a>
+                </li>
+                <li class="navbar-item">
+                    <div class="dropdown">
+                        <a class="navbar-link" href="#background">Background</a>
+                        <div class="dropdown-content" style="min-width: 177px;">
+                            <a href="#developability">Developability</a>
+                            <a href="#gauss-stylization">Gauss Stylization</a>
+                        </div>
+                    </div> 
+                </li>
+                <li class="navbar-item">
+                    <div class="dropdown">
+                        <a class="navbar-link" href="#algorithm">Algorithm</a>
+                        <div class="dropdown-content" style="min-width: 100px;">
+                            <a href="#implementation">Implementation</a>
+                        </div>
+                    </div> 
+                </li>
+                <li class="navbar-item">
+                    <a class="navbar-link" href="#results">Results</a>
+                </li>
+                <li class="navbar-item">
+                    <a class="navbar-link" href="#conclusion">Conclusion</a>
+                </li>
+                <li class="navbar-item">
+                    <a class="navbar-link" href="#references">References</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="header" id="intro">
+        <h2 class="title">Piecewise Developable Surface Approximation with Gauss Stylization</h2>
+        <h6>Project by Tobias Loch (<a href="mailto:tobias.loch@tu-berlin.de">tobias.loch@tu-berlin.de</a>)
+        </h6>
+
+        <div class="row">
+            <figure>
+                <div class="one-half column category" style="text-align: center;">
+                    <h5 class="docs-header">Input</h5>
+                    <img class="u-max-full-width" src="images/bob-developable/original.png">
+                </div>
+    
+                <div class="one-half column category" style="text-align: center;">
+                    <h5 class="docs-header">Output</h5>
+                    <img class="u-max-full-width" src="images/bob-developable/modified.png">
+                </div>
+            </figure>
+
+
+            <figure class="u-pull-right" style="text-align: center; width:300px; margin-left:20px">
+                <h5 id="assembling-piecewise-developable-surfaces" class="docs-header">Assembling a Piecewise Developable Surface <a href="#2">[2]</a></h5>
+                <video class="u-max-full-width" controls poster="images/thumbnail.png">
+                    <source src="videos/Developability of Triangle Meshes_edit.mp4" type="video/ogg">
+                    Your browser does not support the video tag.
+                </video>
+                <figcaption>
+                    An example of bringing a Piecewise Developable surface into the real world. The Mask was approximated using a collection of developable patches. The patches are then cut out of paper and assembled together to form the surface. 
+                </figcaption>
+            </figure>
+
+            <p>
+                Bringing complex 3D shapes into the real world is a challenging task. While 3D printers are becoming more and more popular, they still struggle with complex shapes. To address this, we explore Piecewise Developable surfaces—locally flat surfaces, called patches, that approximate curved shapes. Those patches are easy to manufacture and assemble, due to their simple shape. An example of this can be seen on the right. Furthermore, surfaces composed of these developable pieces reduce costs and enhance quality within computer-controlled milling procedures, as demonstrated by the work of Harik et al. <a href="#5">[5]</a> in 2013. 
+            </p>    
+            <p> 
+                In recent years there have been two approaches for approximating Piecewise Developable Surfaces. The first was introduced by Stein et al. <a href="#2">[2]</a> in 2018. They improved the definition of Piecewise Developability via introducing new properties of measuring developability and created an optimization technique to optimize for Piecewise Developability. In 2021 Liu and Jacobsen <a href="#1">[1]</a> built up on this by introducing a Stylization technique based on vertex normal preferences which they used to apply a developable style that also optimizes for the properties introduced by Stein et al.
+                <!-- We achieve this by using a technique called Gauss Stylization, which applies a certain style onto a triangle mesh while keeping its overall appearance similar. Based on the technique from Liu and Jacobson <a href="#1">[1]</a> we want to apply a style that brings a given triangle mesh into a piecewise developable shape. In this paper, we detail the technique, algorithms, and results, showcasing how the approach bridges the gap between practical efficiency and complex shape representation. -->
+                <!-- Efficiently representing complex 3D shapes is a crucial task in computer graphics. While triangle meshes are commonly used, they struggle to capture the intricate features of real-world surfaces. To address this, we explore piecewise developable surfaces—locally flat surfaces that approximate curved shapes. We also introduce Gauss stylization to enhance visual appeal. By integrating piecewise developability and Gauss stylization, we create a powerful method for accurate and visually captivating surface approximation. In this paper, we detail our technique, algorithms, and results, showcasing how our approach bridges the gap between practical efficiency and complex shape representation. -->
+                
+                
+                <!-- We want to take an arbitrary triangle mesh and transform it into a collection of developable patches. -->
+            </p>
+            <p>
+                The goal of this article is to use the optimization from Liu and Jacobsen and combine it with the face normal based Gauss Stylization from Kohlbrenner et al. <a href="#3">[3]</a> to create a powerful method for accurate and visually captivating surface approximation. We detail the technique, algorithms, and results, showcasing how the approach bridges the gap between practical efficiency and complex shape representation.
+            </p>
+        </div>
+    </section>
+
+
+    <div class="docs-section" id="background">
+        <h3 class="section-heading" id="developability">Developability</h3>
+        <!-- <p class="section-description">
+            To transform a given triangle mesh into a piecewise developable mesh, we used the technique from Liu and Jacobson <a href="#1">[1]</a>. They introduced a technique to stylize a given triangle mesh via given vertex normal preferences. We want to apply this technique onto the face normal based Gauss Stylization <a href="#3">[3]</a>. In the following we will describe both techniques.
+        </p> -->
+
+        <!-- <h5>Developability</h5> -->
+
+        <p>
+            Piecewise Developability refers to a geometric modeling approach where a complex surface is approximated using a collection of smaller developable patches. Developable patches are surfaces that can be flattened onto a plane without stretching or tearing, like rolling out a piece of paper. In the discrete context we can define flattenability as follows:  
+            
+
+        </p>
+        <div id="d1" class="definition">
+            <b>Flattenability</b> <a href="#2">[2]</a> <br>
+            <p>A triangulated surface is <b>flattenable</b> if the angle sum equals \(2\pi\) at every vertex.</p>
+        </div>
+        <p>
+            Due to the flattenability inherent in the patches of a Piecewise Developable surface, the curvature focuses primarily on the transitions between patches, while the patches themselves are low curved. This is illustrated in the images below.
+        </p>
+
+       <figure class="row" id="curvature-developable-compared">
+           <div class="one-half column category" style="text-align: center;">
+               <h5 class="docs-header">Original</h5>
+               <img class="u-max-full-width" src="images/bob-developable/original-curvature.png">
+           </div>
+
+           <div class="one-half column category" style="text-align: center;">
+               <h5 class="docs-header">Piecewise Developable</h5>
+               <img class="u-max-full-width" src="images/bob-developable/modified-curvature.png">
+           </div>
+           <figcaption>
+                Blue and yellow colors means that the surface is bent or highly curved and turquoise means that it is flat or low curved.
+            </figcaption>
+       </figure>
+
+        <!-- <p>
+            
+            In the discrete context, these surfaces are approximated using a finite set of flat facets (patches) that locally approximate the underlying curved surface. 
+            A flattenable patch has the ability that you can bent it into a plane. 
+        </p> -->
+        
+
+        Only enforcing flattenability on the patches is insufficient, as it doesn't guarantee manufacturability. An example for this is a crumbled piece of paper which is easily flattenable, but has a complex structure. This can be seen on the first of the three images below. Therefore, we need to ensure that the patches are also discretely ruled.
+        
+        <div id="d1" class="definition">
+            <b>Discretely Ruled Surface</b> <a href="#2">[2]</a> <br>
+            <p>A <b>discrete ruling line</b> is a line that connects two vertices of the mesh and is straight on the surface. A surface is <b>discretely ruled</b> if every vertex is contained in a discrete ruling line such that all that ruling lines are parallel.</p>
+        </div>
+
+
+        <figure class="column category" style="text-align: center;">
+            <h5 class="docs-header">Comparing different flattenable surfaces <a href="#2">[2]</a></p></h5>
+            <img class="u-max-full-width" src="images/angle-defect-vs-hinge.png">
+            <figcaption>
+                All three surfaces above can be flattened out. The right surface has clear ruling lines which are all parrallel to each other. Therefore it is discretely ruled.
+            </figcaption>
+        </figure>
+        
+        A discretely ruled surface can be easily manufactured, because it has large flat structures and is easy to bend or cut. Consequently, the aim for Piecewise Developable surfaces is to ensure both the presence of discrete ruling lines and the ability to be flattened. To achieve this, we focus on optimizing hinges:
+        
+
+        <figure class="u-pull-right" style="text-align: center;width: 400px;">
+            <h5 id="figure2" class="docs-header">Flattening out a Hinge</h5>
+            <img style="width:100%" class="u-max-full-width" src="animations/hinge/hinge_animation.gif">
+            <!-- <figcaption>
+                The dotted black line is a ruling line.
+            </figcaption> -->
+        </figure>
+        
+        <div class="definition">
+            <b>Hinge</b> <a href="#2">[2]</a><br>
+            <p>
+                A Vertex is a <b>hinge</b> if the normals of its incident triangles are contained in a common plane and does not self intersect. 
+            </p>
+        </div> 
+        
+        <p>
+            By optimizing for hinges, surfaces can be both discretely ruled and flattenable, which balances between these two important characteristics. 
+            Stein et al. demonstrated that hinges consistently lead to vertices with incident triangles partitioned into exactly two edge-connected regions, each characterized by constant normals. This attribute ensures easy flattening, as the normals are already in a common plane. Moreover, hinges imply a distinct ruling line, for the three vertices adjacent to both regions. Furthermore, the results from Stein et al. show that optimizing for such leads to clearly ruled surfaces. <br> 
+            In summary, <b>if all vertices of a mesh are hinges, then the surface is Piecewise Developable.</b> 
+
+        </p>
+        <p>
+            Next we will introduce the algorithm that we use to optimize for hinges.
+        </p>
+
+        <!-- <div class="definition">
+            <b>Piecewise Developable Surface</b> <br>
+            <p>A Surface is <b>Piecewise Developable</b> if every vertex is a hinge.</p>
+        </div> -->
+
+        <!-- The resuls optimizing for hinges from Stein can be seen in the following image: <br> -->
+
+
+
+        <!-- A surface is developable if it is flattenable, i.e. that the angle deficit at each vertex is zero. If a surface is flattenable then it does not have to be easily developable. For example a crumbled piece of paper is flattenable, but is hard to reproduce via bending the paper. To fix this Stein, Grinspun, and Crane <a href="#2">[2]</a> added to this defeinition also the need of discrete ruling lines. This means that  -->
+
+        <!-- Piecewise Developable surfaces are those that can be made by smoothly bending flat pieces without stretching or shearing. Such a Surface. A Surface having this property can be more easily constructed via printing each part of the surface on a flat sheet of paper, cutting the paper and then bending it to the desired shape. It can be also used for milling, due to the fact that developeable surfaces are less curved. The following video show how a piecewise developable surface is assembled from flat material. -->
+
+        <h3 class="section-heading" id="gauss-stylization">Gauss Stylization</h3>
+
+        <p>
+            Gauss Stylization <a href="#3">[3]</a> is a tequnique that changes the shape of a triangle surface mesh while keeping its overall appearance similar. In short, it maximises for given face normal directions, while penalising non-rigid transformations.
+        </p>
+        
+
+        <p>
+            To achieve this the following energy is minimized:
+            <!-- $$
+            E_{ARAP} - \mu \sum_{f\in \mathcal{F}} g(n^*_f) +\lambda \sum_{(i,j)\in \mathcal{E}} \frac{w_{ij}}{2} \|e_{ij} - e^*_{ij}\|^2, \quad \quad \textrm{s.t. } {n^*_f}^T e^*_{ij} = 0 \textrm{ with } (i,j) \in f
+            $$ -->
+            $$
+            E_G^*(V,R,n^*,e^*) = E_{ARAP}(V,\{R_i\}) - \mu \sum_{f\in F} g(n^*_f) +\lambda \sum_{(i,j)\in E} \frac{w_{ij}}{2} \|e_{ij} - e^*_{ij}\|^2, \\\textrm{s.t. } {n^*_f}^T e^*_{ij} = 0 \textrm{ with } (i,j) \in f
+            $$
+
+            <!-- \(F\) is the set of faces and \(E\) is the set of edges. \(n^*_f\) is the given normal direction for face \(f\). \(e_{ij}\) is the vector from vertex \(i\) to vertex \(j\). \(e^*_{ij}\) is the vector from vertex \(i\) to vertex \(j\) in the rest pose. \(w_{ij}\) is the weight of the edge \((i,j)\). \(\mu\) and \(\lambda\) are the weights for the two terms. -->
+        </p>
+        <p>
+        
+            <!-- The optimization function consists of three main terms: -->
+            <table>
+                <tr>
+
+                    <td>\(E_{ARAP}(V,\{R_i\})\) </td>
+                    <td>
+                        This is the As-Rigid-As-Possible (ARAP) energy term which penalises non-rigid transformations, that shear or stretch the mesh. \(V\) are the vertex positions and \(R\) are the local rotations.
+                    </td>
+                </tr>
+                <tr>
+
+                    <td>\(\mu\sum_{f\in \mathcal{F}} g(n^*_f)\) </td>
+                    <td>
+                        This term enforces the face normals \(n^*_f\) to be aligned with the given normal preferences, which are defined by \(g\). Increasing the parameter \(\mu\) leads to faster convergence of the algorithm, but can also result in more deformations, due to the fact that it decreases the influence of the \(E_{ARAP}\) energy. \(\mathcal{F}\) is the set of faces.
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>\(\lambda\sum_{(i,j)\in \mathcal{E}} \frac{w_{ij}}{2} \|e_{ij} - e^*_{ij}\|^2\)</td>
+                    <td>
+                        This regularization term ensures that normals of neighboring faces are not optimized independently. Increasing the parameter \(\lambda\) results in stronger stylization. \(e^*_{ij}\) are the desired edge vectors, \(e_{ij}\) the original ones, \(w_{ij}\) are edge weights and \(\mathcal{E}\) is the set of edges.
+
+                    </td>
+                </tr>
+            </table>
+        </p>
+
+
+        <figure class="u-pull-right" style="text-align: center; width:300px; margin-left:20px">
+            <h5 id="assembling-piecewise-developable-surfaces" class="docs-header">Example preference function <a href="#3">[3]</a></h5>
+            <img class="u-max-full-width image" src="images/preference-function-example.png" alt="Image 1">
+            <figcaption>
+                An example of a preference function with different \(\sigma\). The function prefers vectors aligned with the coordinate axes. \(\sigma\) decreases from left to right. 
+            </figcaption>
+        </figure>
+
+        <p>
+            <!-- \(\mu\) and \(\lambda\) are parameters that control the influence of the last two terms.  -->
+            \(g\) is the preference function. It is modeled as a mixture of Gaussians. The preferences can be also defined face wise, which we will use later. \(g\) is defined as follows:
+            $$
+            g(x) = \sum_k w_k \exp(\sigma x^T n_k)
+            $$
+            \(n_k\) are the normal preferences and \(w_k\) are their weights. We always set the weights to 1, because we only have one preference per face. Therefore, they can be ignored. \(\sigma\) is a parameter that controls the width of the Gaussians. A high \(\sigma\) allows more deviation from the normal preferences. An example is shown on the right.
+        </p>
+
+        <p>
+            The minimization of the energy function is done via combining the ARAP energy minimization <a href="#6">[6]</a> with an Alternating Direction Method of Multipliers (ADMM) <a href="#7">[7]</a>. \(R\) and \(V\) are optimized according to the ARAP approach while \(e^*\) and \(n^*\) are optimized via ADMM. The number \(N\) of ADMM iterations has to be set initially. Kohlbrenner et al. pointed out that one iteration is in most cases enough. Therefore, we set \(N=1\) by default.
+            For more details on Gauss Stylization view <a href="#3">[3]</a> and <a href="#6">[6]</a>
+        </p>
+
+        <p>
+        </p>
+
+
+
+        <p>
+
+        </p>
+
+        <!-- For more details view the original paper <a href="#1">[1]</a>. -->
+
+        <p>
+            Some results from this algorithm applied on the Stanford Bunny can be seen below.
+        </p>
+        <figure class="row">
+            <h5 style="text-align: center;" class="docs-header">An Example of Gauss Stylization <a href="#3">[3]</a></h5>
+            <div style="width:65%" class="column category" style="text-align: center;">
+                <img class="u-max-full-width image" src="images/gauss-stylization.png" alt="Image 1">
+            </div>
+            <div style="width:25%" class="column category" style="text-align: center;">
+                <img class="u-max-full-width image" src="images/gauss-stylization-preference-function.png" alt="Image 1">
+            </div>
+            <figcaption>
+                On the right is the preference function projected onto a 2D plane. The preference function prefers normals that are aligned with the coordinate axes. On the left is the result of the algorithm with increasing \(\lambda\) values. The mesh is deformed such that the normals are aligned with the coordinate axes.
+            </figcaption>
+        </figure>
+        
+        
+        <p>
+            We now want to use this algorithm to apply a style that makes a given mesh Piecewise Developable. Therefore we need to find normal preferences that optimize for hinges. 
+        </p>
+
+        <!-- The preference function is a mixture of gaussians. This decision is useful, because you can easily add such functions while having a smooth transition between them.  -->
+
+
+    <div class="docs-section" id="algorithm">
+        <h3 class="section-heading">Finding Normal Preferences</h3>
+        <p class="section-description">
+            The following algorithm is based on the paper from Liu and Jacobsen <a href="#1">[1]</a>. Their approach stylizes triangle meshes via vertex normal preferences and based on this they developed a technique to make meshes piecewise developable. We want to combine their technique with the face normal based Gauss Stylization algorithm. Due to the fact, that the algorithm applies the style iteratively, the normal preferences are generated before each iteration. We calculate a single normal preference for each face individually. The algorithm looks as follows:
+        </p>
+
+        <div style="margin:auto;width:700px;margin-bottom: 20px;">
+            <b>Input:</b><br> 
+            
+            <table class="algorithm-header">
+                <tr>
+                    <td>\(V\)</td>
+                    <td>Vertices of the triangle mesh</td>
+                </tr>
+                <tr>
+                    <td>\(F\)</td>
+                    <td>Faces of the triangle mesh</td>
+                </tr>
+                <tr>
+                    <td>\(N\)</td>
+                    <td>Matrix containing normals for each face \(f\in F\)</td>
+                </tr>
+                <tr>
+                    <td>\(\text{adj}(v)\)</td>
+                    <td>Faces around a vertex \(v\in V\)</td>
+                </tr>
+                <tr>
+                    <td>\(N_{\text{adj}(v)}\)</td>
+                    <td>Matrix containing the face normals around a vertex \(v \in V\)</td>
+                </tr>
+                <tr>
+                    <td style="border-bottom: none">\(\theta \in \mathbb{Q}\)</td>
+                    <td style="border-bottom: none;">Threshold to control the number of collapses</td>
+                </tr>
+            </table>
+            <b>Output:</b><br>
+            <table class="algorithm-header">
+                <tr>
+                    <td style="border-bottom: none;">\(P_f\)</td>
+                    <td style="padding-left:1.1cm; border-bottom: none;">Face normal preferences for each face \(f \in F\)</td>
+                </tr>
+            </table>
+            <b>begin</b><br>
+            <div class="algorithm-indent">
+                <b>For each</b> \(f\in F\) <font color="green">// Initialize \(P\) with zeros</font><br>
+                <div class="algorithm-indent">
+                    \(P_f \leftarrow (0,0,0)^T\)
+                </div>
+                <b>end for</b><br><br>
+
+                <b>For each</b> \(v\in V\) <font color="green">// Calculate the normal preference for a single Vertex \(v\)</font>
+                <div class="algorithm-indent">
+                <!-- \(C \leftarrow (F_{N(v)}^T F_{N(v)}) \cdot \frac{1}{m} \)  -->
+                Let \(C\) be the covariance matrix of \(N_{\text{adj}(v)}\) <br>
+                <!-- <font color="green">// Covariance Matrix</font><br> -->
+                    Calculate the Eigenvalues \(\lambda_1\), \(\lambda_2\) and \(\lambda_3\) with \(\lambda_1 < \lambda_2 < \lambda_3\) and \(w_i\) its corresponding eigenvectors of \(C\)<br><br>
+
+                    <font color="green">// first principle component = eigenvector with largest eigenvalue</font><br>
+                    <b>If</b> \(\lambda_2 < \theta\) <b>then</b><br>
+                    <!-- q is the matrix containing w_2 and w_3 -->
+                    <div class="algorithm-indent" style="border: 0;">
+                        <!-- q is the matrix containing w_2 and w_3 -->
+                        \(Q \leftarrow w_3\) 
+                    </div>
+                    <b>else</b><br>
+                    <div class="algorithm-indent" style="border: 0;">
+                        \(Q \leftarrow [w_2 \quad w_3]\) 
+                    </div>
+                    <!-- \(A \leftarrow F_v Q^T Q\) <font color="green">// Project the face normals onto the first two principle components</font><br> -->
+                    <br>
+
+                    <font color="green">// Project the face normals onto the first or the first two principle components</font><br>
+                    <b>For each</b> \(f\in\) \(\text{adj}(v)\) 
+                    <div class="algorithm-indent" style="border: 0;">
+                        \(P_f \leftarrow P_f + \text{normalize}(Q(Q^T N_f))\)
+                    </div> 
+                </div>
+                <b>end for</b><br><br>
+                
+                <b>For each</b> \(f\in F\) <font color="green">// Average the generated Preferences</font><br>
+                <div class="algorithm-indent" >
+                    \(P_f \leftarrow \frac{P_f}{\|P_f\|}\)
+                </div>
+                <b>end for</b><br><br>
+            </div>
+            
+        </div>
+
+        <p>
+            In the first part of the algorithm, we calculate normal preferences for each vertex \(v\), that are in a common plane (hinge). To do so it performs a Principle Component Analysis on the face normals around \(v\). It then projects these face normals either onto the first or first two principle components dependent on a threshold \(\theta\). If the second eigenvalue is smaller than \(\theta\), then the face normals are projected onto the first principle component. Otherwise they are projected onto the first two principle components. This value should control the number of crashes the approximation has. 
+        </p>
+        <p>
+            In the second part of the algorithm, we average the generated normal preferences facewise. Due to the fact that each face has at most three adjacent vertices, we get at most three preferences per face from the step before. We did this by simply adding up the vectors and then normalizing them in the end.
+            <!-- The resulting vectors are then added to calculate the current face normal preferences \(P_v\). Due to the fact that each face has three adjacent vertices, we get three preferences per face. To get the final preference function we normalise the preferences, which is equal to averaging over the three preferences generated before. -->
+        </p>
+            
+        <figure class="row">
+
+            <h5 class="docs-header" style="text-align: center;">Example of a single iteration of the algorithm</h5>
+            <img src="animations/pyramid-plots/pyramid-with-pcas/animation.gif" style="height: 300px; margin: 0 auto; display: block;">
+        </figure>
+
+        <figure class="row">
+            <div class="one-half column category" style="text-align: center;">
+                <div class="toggle-curvature">
+                    <img class="toggleButton image u-max-full-width" src="images/pyramid/pyramid-with-pcas-projected-onto-first-pc.png" alt="Image 1">
+                </div>
+            </div>
+            <div class="one-half column category" style="text-align: center;">
+                <div class="toggle-curvature">
+                    <img class="toggleButton image u-max-full-width" src="images/pyramid/pyramid-with-pcas-projected-onto-first-two-pcs.png" alt="Image 1">
+                </div>
+            </div>
+            <figcaption>
+                In this figure the algorithm is applied on a vertex with four adjacent faces. The left image shows the face normals (black) projected onto the first principle component (high \(\theta\)). The right image shows the face normals projected onto the first two principle components (low \(\theta\)). The principle component vectors are the red ones and the blue plane on the right is the plane that the face normals are projected into. The green vectors correspond to the normal preferences that are passed to the Gauss Stylization. Clicking on the images shows how the meshes would converge when the developable style is applied. It is easy to see how the situation on the right lead to a hinge, while the left one only flattens the vertex out.
+            </figcaption>
+        </figure>
+
+    </div>
+
+
+    <div class="docs-section" id="implementation">
+        <h3 class="section-heading">Implementation</h3>
+
+        <p>
+            We forked the implementation provided by Kohlbrenner et al. <a href="#3">[3]</a> for Gauss Stylization which provided a modeling interface using the igl library. We changed the implementation such that only the relevant parts remained and implemented the algorithm from the last section. The code is in C++ and provided at <a href="https://gitlab.cg.tu-berlin.de/sempro/cgp-ss23-gauss-stylization-developable">https://gitlab.cg.tu-berlin.de/sempro/cgp-ss23-gauss-stylization-developable</a>.
+        </p>
+
+        <p>
+            Here is a short summary of the parameters that have to be set for modeling:
+        </p>
+
+        <table>
+            <tr>
+                <td>
+                    \(N\)
+                </td>
+                <td>The number of ADMM iteration steps. Most of the time a value of \(1\) is enough, but for faster convergence this can be increased.</td>
+            </tr>
+            <tr>
+                <td>\(\lambda\)</td>
+                <td>
+                    The weight of the regularization term of the Gauss Stylization Energy. This parameter controls how strong the stylization is after convergence. By default we set it to \(3000\).
+                </td>
+            </tr>
+            <tr>
+                <td>\(\mu\)</td>
+                <td>
+                    The weight of the preference function term of the Gauss Stylization Energy. Increasing this value accelerates the convergence, but can lead to deformations due to decreasing the influence of the ARAP energy in each iteration. We used most of the time a value of \(1\).
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    \(\sigma\)
+                </td>
+                <td>
+                    The width of the Gaussians used for the preference function. Higher values of \(\sigma\) allows more deviation from the normal preferences. This can sometimes result in clearer patches. By default we set this value to \(10\). For meshes with less faces we recommend decreasing this, to have less deformations.
+                </td>
+            </tr>
+            <tr>
+                <td style="border-bottom: none;">\(\theta\)</td>
+                <td style="border-bottom: none;">
+                    The threshold for the PCA. This value controls how many crashes the algorithm has. Lower values lead to more patches. A good value is around \(0.005\) to \(0.001\). A value greater than \(1\) leads to no patches at all, because all faces are projected onto the first principle component.
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="docs-section" id="results">
+        <h3 class="section-heading">Results</h3>
+        <p class="section-description">
+            <!-- <div class="u-pull-right" style="text-align: center; width:300px; margin-left:20px">
+                <h5 id="figure2" class="docs-header">Gaussian Curvature Color Map</h5>
+                <img style="height: 5cm;" src="images/viridis-color-map.png">
+                <p>Blue means bent inward, turquoise means flat and yellow means bent outward</p>
+            </div> -->
+
+            <p>
+                We use the Gaussian Curvature to measure the performance of the algorithm. The Gaussian Curvature is defined on a continous surface as the product of the two principle curvatures. On discrete surfaces it can be defined via the angle deficit and is then calculated as follows:
+                
+                $$k(v_i) = 2 \pi - \sum_{j \in N(i)} \theta_{ij}$$
+                
+                Here \(N(i)\) are the adjacent triangles of the vertex \(v_i\) and \(\theta_{ij}\) is the angle at vertex \(i\) and triangle \(j\). In our implementation it is calculated according to the igl library which also normalised it over the area. For more details view <a href="#4">[4]</a>. 
+            </p>
+            <p>
+                We used the Viridis color map to visualize the Gaussian Curvature on a surface. Blue means bent inward, turquoise means flat and yellow means bent outward. When the absolute of the curvature is higher than a given maximum \(\omega\), then we capped it at that value. This was useful to see more details. On all tests we applied \(1000\) iterations of the algorithm. The following images show the Gaussian Curvature of the original Stanford Bunny and the Gaussian Curvature of the approximated Stanford Bunny with \(\theta = 0.0025, \lambda=10^3, \sigma=10\) and \( \mu=1\). In the visualisation we set \(\omega=2^4\). Clicking on the images disables the curvature color map.
+                
+                <!-- the algorithm we applied 1000 iterations of it with \(\theta = 0.0025\) to the Stanford Bunny. -->
+            </p>
+            
+
+
+
+            <figure class="row">
+                <div class="one-half column category" style="text-align: center;">
+                    <h5 class="docs-header">Input</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-developable/original-curvature.png" alt="Image 1">
+                    </div>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-wireframe/bunny-wireframe-input-curvature.png" alt="Image 1">
+                    </div>
+                </div>
+                <div class="one-half column category" style="text-align: center;">
+                    <h5 class="docs-header">Output</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-developable/0.0025-curvature.png" alt="Image 1">
+                    </div>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-wireframe/bunny-wireframe-output-curvature.png" alt="Image 1">
+                    </div>
+                </div>
+            </figure>
+
+
+            <p>
+                The Curvature concentrates onto some edges on the output mesh. Those are the transitions of the patches. On the patches the curvature is mostly turquoise which means that it is low curved there. While the patches remain flat the algorithm does not guarantee them to be discretely ruled. This can be seen on the closeup image where the edge lines are painted black. This is probably due to the fact that the ARAP optimization penalises changing the topology of the mesh.
+            </p>
+            
+            <p>
+                Next we compared the influence of \(\theta\) onto the algorithm. Below are some images which show the results for different values of \(\theta\).
+            </p>
+
+            <figure class="row">
+                <div class="one-third column category" style="text-align: center;">
+                    <h5 class="docs-header">\(\theta = 1\)</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-developable/1-curvature.png" alt="Image 1">
+                        <img class="u-max-full-width image" src="images/bunny-developable/1-curvHist.png" alt="Image 1">
+                    </div>
+                </div>
+                <div class="one-third column category" style="text-align: center;">
+                    <h5 class="docs-header">\(\theta = 0.005\)</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-developable/0.005-curvature.png" alt="Image 1">
+                        <img class="u-max-full-width image" src="images/bunny-developable/0.005-curvHist.png" alt="Image 1">
+                    </div>
+                </div>
+                <div class="one-third column category" style="text-align: center;">
+                    <h5 class="docs-header">\(\theta = 0.001\)</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-developable/0.001-curvature.png" alt="Image 1">
+                        <img class="u-max-full-width image" src="images/bunny-developable/0.001-curvHist.png" alt="Image 1">
+                    </div>
+                </div>
+            </figure>
+
+            <p>
+                It is clear to see how \(\theta\) influences the generation of patches. When it decreases more crashes happen and therefore more and smaller patches are generated. On the left we never project the face normals onto the first two principle components and therefore we have only one preference normal around each vertex. This results in smoothing the mesh. Below the images we plotted a histogram with logarithmic scale of the Gaussian Curvature magnitude. It is clear to see that the curvature of most vertices decreases. This is due to the fact that it is more concentrated on the transition of the patches, while the patches itself are mainly flat. The spike blue on the left of the histograms is the curvature of the ground plane of the bunny, which is slightly changed during the optimization.
+            </p>
+
+            <p>
+                Next we compared the influence of changing sigma. Below are some images which show the results for different values of sigma with \(\theta=0.0025\). The other parameters are unchanged.
+            </p>
+
+            <figure class="row">
+                <div class="one-third column category" style="text-align: center;">
+                    <h5 class="docs-header">\(\sigma = 1\)</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-sigma/output-1-curvature.png" alt="Image 1">
+                        <img class="u-max-full-width image" src="images/bunny-sigma/output-1-curvHist.png" alt="Image 1">
+                    </div>
+                </div>
+                <div class="one-third column category" style="text-align: center;">
+                    <h5 class="docs-header">\(\sigma = 20\)</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-sigma/output-20-curvature.png" alt="Image 1">
+                        <img class="u-max-full-width image" src="images/bunny-sigma/output-20-curvHist.png" alt="Image 1">
+                    </div>
+                </div>
+                <div class="one-third column category" style="text-align: center;">
+                    <h5 class="docs-header">\(\sigma = 40\)</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton u-max-full-width image" src="images/bunny-sigma/output-40-curvature.png" alt="Image 1">
+                        <img class="u-max-full-width image" src="images/bunny-sigma/output-40-curvHist.png" alt="Image 1">
+                    </div>
+                </div>
+            </figure>
+
+            <p>
+                Increasing \(\sigma\) leads to clearer patches. If it is high, then the mesh deforms, which is visible on the right image. This is due to the fact that the width of the Gaussians is too large and therefore tolerates large deviations from the face normal preferences. While we double \(\sigma\) between the middle and the right image, the curvature in the histogram only changes slightly. Therefore, a value up to 20 leads to good results in this situation. From our experience we recommend setting \(\sigma\) to 4 or 10.
+            </p>
+
+            <p>
+                Below you can see more results of the algorithm on different meshes.
+            </p>
+
+            <figure class="row">
+                <div class="one-third column category" style="text-align: center;">
+                    <h5 class="docs-header">Input</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/shiba-developable/original-curvature.png">
+                    </div>
+
+                </div>
+    
+                <div class="one-third column category" style="text-align: center;">
+                    <h5 class="docs-header">Output</h5>
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/shiba-developable/modified-curvature.png">
+                    </div>
+                    <figcaption>\(\lambda=10^3,\omega=2^5,\sigma=4,\theta=0.0025,\mu=1\)</figcaption>
+                </div>
+    
+                    <div class="one-third column category" style="text-align: center;bottom:0">
+                    <h5 class="docs-header">Gauss Curvature Histogram</h5>
+                    <img class="u-max-full-width" src="images/shiba-developable/curvHist.png">
+                </div>
+            </figure>
+            <hr style="width:100%;text-align:left;margin-left:0">
+            <figure class="row">
+                <div class="one-third column category" style="text-align: center;">
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/bob-developable/original-curvature.png">
+                    </div>
+                </div>
+    
+                <div class="one-third column category" style="text-align: center;">
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/bob-developable/modified-curvature.png">
+                    </div>
+                    <figcaption>\(\lambda=10^3,\omega=2^5,\sigma=4,\theta=0.0025,\mu=1\)</figcaption>
+                </div>
+    
+                    <div class="one-third column category" style="text-align: center;bottom:0">
+                    <img class="u-max-full-width" src="images/bob-developable/curvHist.png">
+                </div>
+            </figure>
+            <hr style="width:100%;text-align:left;margin-left:0">
+            <figure class="row">
+                <div class="one-third column category" style="text-align: center;">
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/ogre-developable/ogre-original-curvature.png">
+                    </div>
+                </div>
+    
+                <div class="one-third column category" style="text-align: center;">
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/ogre-developable/ogre-modified-curvature.png">
+                    </div>
+                    <figcaption>\(\lambda=10^3,\omega=2^5,\sigma=10,\theta=0.0025,\mu=1\)</figcaption>
+                </div>
+    
+                    <div class="one-third column category" style="text-align: center;bottom:0">
+                    <img class="u-max-full-width" src="images/ogre-developable/curvHist.png">
+                </div>
+            </figure>
+            <hr style="width:100%;text-align:left;margin-left:0">
+            <figure class="row">
+                <div class="one-third column category" style="text-align: center;">
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/sphere/input-curvature.png">
+                    </div>
+                </div>
+    
+                <div class="one-third column category" style="text-align: center;">
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/sphere/output-curvature.png">
+                    </div>
+                    <figcaption>\(\lambda=10^3,\omega=2^2,\sigma=4,\theta=0.002,\mu=1\)</figcaption>
+                </div>
+    
+                    <div class="one-third column category" style="text-align: center;bottom:0">
+                    <img class="u-max-full-width" src="images/sphere/curvHist.png">
+                </div>
+            </figure>
+
+            <p>
+                The curvature decreased on all meshes above. Also, the generation of patches can be seen. Next we applied the algorithm on a mesh generated by Stein et al. which is already Piecewise Developable.
+            </p>
+
+            <figure class="row">
+                <div class="one-third column category" style="text-align: center;">
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/stein-bunny/original-curvature.png">
+                    </div>
+                </div>
+    
+                <div class="one-third column category" style="text-align: center;">
+                    <div class="toggle-curvature">
+                        <img class="toggleButton image u-max-full-width" src="images/stein-bunny/modified-curvature.png">
+                    </div>
+                    <figcaption>\(\lambda=10^3,\omega=2^4,\sigma=10,\theta=0.0025,\mu=1\)</figcaption>
+                </div>
+    
+                    <div class="one-third column category" style="text-align: center;bottom:0">
+                    <img class="u-max-full-width" src="images/stein-bunny/curvHist.png">
+                </div>
+            </figure>
+
+            <p>
+                There is only a slight change visible. This shows that the algorithm is able to preserve the developability of a mesh.
+                In comparision to the bunny we generated from the beginning of the section it is notable that the bunny from Stein et al. has less complex transitions between the patches. 
+            </p>
+
+
+            <!-- <p>
+                This might be due to the fact that the ARAP optimization used in the Gauss Stylization penalises changing the topology of the mesh. Therefore clear ruling lines are less likely to be generated.
+                 While our bunny mesh at the beginning of the section had less faces there is a clear difference visible. The bunny generated by Stein et al. has clear smooth ruling lines. Our bunny also has ruling lines but they are less curved and more fragmentated. This is probably due to the fact, that the ARAP optimization used in the Gauss Stylization penalises changing the topology of the mesh. Therefore clear ruling lines are less likely to be generated.
+            </p> -->
+            
+
+            <!-- <p>
+                TODOs: 
+                <ui>
+                    <li>compare the results to Liu and Stein</li>
+                    <li>show a closeup of the bunny to the the generation of ruling lines. Explain the problem with ruling line generation due to ARAP</li>
+                    <li>
+                        explain that compared to stein there are no clear ruling lines visible. This is due to the fact that we use ARAP to generate the ruling lines. This penalises changing the topology of the mesh.
+
+                    </li>
+                </ui>
+            </p> -->
+        </p>
+    </div>
+
+    <div class="docs-section" id="conclusion">
+        <h3 class="section-heading">Conclusion</h3>
+        <p class="section-description">
+            In summary, the presented implementation offers a straightforward tool of reducing mesh curvature and approximating Piecewise Developable surfaces. 
+            
+            However, it's important to acknowledge certain drawbacks. Notably, the patches are not guaranteed to be discretely ruled. Also, the transitions between patches are complex. This can pose challenges in the manufacturing phase. Approximating the patches with discretely ruled surfaces could be a future research direction. 
+        </p>
+        <p>
+            It would be interesting to see how easy the mesh can be printed out and assembled together. 
+            The implementation could be improved by implementing algorithms for identifying the patches and printing them out. The patches for example could be identified via a clustering algorithm that puts two neighboring vertices into the same cluster if they have a similar normal depending on a threshold. The set of patches then have to be flattened out for printing which can be done for example using the Gauss Stylization approach.
+        </p>
+        <!-- <p>    
+            Using the approach presented above one can easily reduce the curvature of a mesh and approximate a developable surface. This can then be used to improve manufacturing. There also some downsides compared to the other approache. The Gauss Stylization approach has complex ruling transitions between the patches which can be hard to manufacture.    
+        </p> -->
+        
+        <!-- <p>
+            While we already approximate a developable surface, there is still room for improvement in the implementation. After the approximation one could implement algorithms for identifying the patches and printing them out. It would be interesting to see how easy the mesh can be printed out and assembled together. The patches for example could be identified via a clustering algorithm that puts two neighboring vertices into the same cluster if they have a similar normal depending on a threshold. The set of patches then have to be flattened out for printing which can be done for example using the Gauss Stylization approach. 
+        </p> -->
+
+        <p>
+            Furthermore comparing the running time between the three different approaches would be interesting. Also some more experiments could be done to see how the different parameters influence the results. 
+            <!-- For example instead of averaging the three generated normal preferences from the adjacent vertices of a face, one could also try to weight them differently and give them directly into the Gauss Stylization to improve the flexibility of the optimization. -->
+        </p>
+
+        <p>
+            In conclusion, our study demonstrates the potential of the Gauss Stylization method for developable surface approximation. While challenges exist, advancements in patch identification, patch approximation, printing feasibility and parameter variation stand as promising directions for future research in this domain.
+        </p>
+
+        <!-- <p>
+            One could also try to optimize for clearer ruling lines.
+        </p> -->
+
+
+        <!-- TODO: explain that we reached our goal
+        <br>
+        TODO: explain how to improve the gui with an approach to filter out the patches and print them to pdf<br>
+        TODO: explain that the weights of the preferences were allways set to 1 and that this could be also explored if it can be used to improve the results<br> -->
+    </div>
+
+    <div class="docs-section" id="references">
+        <h3 class="section-heading">References</h3>
+        <ul class="popover-list">
+            <li class="popover-item" id="1">
+                [1] <font color="blue">Hsueh-Ti Derek Liu and Alec Jacobson.</font> "Normal-Driven Spherical Shape Analogies". <i>In: CoRR abs/2104.11993</i> (2021). arXiv: 2104.11993. url: <a href="https://arxiv.org/abs/2104.11993">https://arxiv.org/abs/2104.11993</a>.
+            </li>
+            <li class="popover-item" id="2">
+
+                [2] <font color="blue">Oded Stein, Eitan Grinspun, and Keenan Crane.</font> "Developability of Triangle Meshes". In: <i>ACM Trans. Graph. 37.4</i> (2018).
+            </li>
+            <li class="popover-item" id="3">
+                [3] <font color="blue">Maximilian Kohlbrenner, Ugo Finnendahl, Tobias Djuren and Marc Alexa</font> "Gauss Stylization: Interactive Artistic Mesh Modeling based on Preferred Surface Normals". In: <i>Computer Graphics Forum </i> (2021). issn: 1467-8659. doi: 10.1111/cgf.14355.
+            </li>
+            <li class="popover-item" id="4">
+                [4] <a href="https://libigl.github.io/tutorial/#gaussian-curvature">https://libigl.github.io/tutorial/#gaussian-curvature</a>
+            </li>
+            <li class="popover-item" id="5">
+                [5] <font color="blue">Harik, Ramy F., Hu Gong, and Alain Bernard</font> <span>"5-Axis Flank
+                Milling: A State-of-the-Art Review."</span> In: <em>Computer-Aided
+                Design</em> (2013). url: <a
+                href="https://doi.org/10.1016/j.cad.2012.08.004">https://doi.org/10.1016/j.cad.2012.08.004</a>.
+            </li>
+            <li class="popover-item" id="6">
+                [6] <font color="blue">Olga Sorkine and Marc Alexa</font>. “As-Rigid-As-Possible Surface Modeling”. In: <i>Proceedings of EUROGRAPHICS/ACM SIGGRAPH Symposium on Geometry Processing</i> (2007). pp. 109–116
+            </li>
+            <li class="popover-item" id="7">
+                [7] <font color="blue">Boyd, Stephen & Parikh, Neal & Chu, Eric & Peleato, Borja & Eckstein, Jonathan.</font> Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers. In: <i>Foundations and Trends in Machine Learning</i> (2011). 3. 1-122. doi: 10.1561/2200000016. 
+            </li>
+        </ul>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener("click", function(event) {
+      if (event.target.classList.contains("toggleButton")) {
+        const toggleButton = event.target;
+        const parentDiv = toggleButton.closest(".toggle-curvature");
+    
+        if (parentDiv) {
+          const image = parentDiv.querySelector(".image");
+          const imagePath = image.getAttribute("src");
+    
+          if (imagePath.includes("-curvature")) {
+            image.src = imagePath.replace("-curvature", "");
+          } else {
+            const extensionIndex = imagePath.lastIndexOf(".");
+            image.src = imagePath.slice(0, extensionIndex) + "-curvature" + imagePath.slice(extensionIndex);
+          }
+        }
+      }
+    });
+</script>

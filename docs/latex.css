@@ -1,0 +1,81 @@
+.definition:before {
+    counter-increment: definition;
+    content: "Definition " counter(definition) ".";
+    font-weight: bold;
+  }
+  
+  .theorem:before {
+    counter-increment: theorem;
+    content: "Theorem " counter(theorem) ".";
+    font-weight: bold;
+  }
+  
+  .lemma:before {
+    counter-increment: lemma;
+    content: "Lemma " counter(lemma) ".";
+    font-weight: bold;
+  }
+  
+  .example:before {
+    counter-increment: example;
+    content: "Example " counter(example) ".";
+    font-weight: bold;
+  }
+  
+  .proposition:before {
+    counter-increment: proposition;
+    content: "Proposition " counter(proposition) ".";
+    font-weight: bold;
+  }
+  
+  .corollary:before {
+    counter-increment: corollary;
+    content: "Corollary " counter(corollary) ".";
+    font-weight: bold;
+  }
+  
+  .proof {
+    display: table;
+    width: 100%;
+  }
+  
+  .corollary p:first-child,
+  .theorem p:first-child,
+  .definition p:first-child,
+  .proof p:first-child,
+  .lemma p:first-child,
+  .example p:first-child {
+    display: inline;
+  }
+  
+  .corollary,
+  .theorem,
+  .definition,
+  .proof,
+  .lemma,
+  .example {
+    margin-block: 1rem;
+  }
+  
+  .proof:before {
+    content: "Proof. ";
+    font-style: italic;
+  }
+  
+  .proof:after {
+       content: "\25FB";
+    float: right;
+  }
+  
+  .proof > p:last-child:not(:nth-child(2)) {
+    display: inline;
+  }
+  
+  .proof > p:last-child:nth-child(2) {
+    display: inline-block;
+    margin-block-end: 0;
+  }
+  
+  .proof > p:last-child > span:last-child .katex-display {
+    margin: 1em 0 calc(-1.6em * 1.1);
+  }
